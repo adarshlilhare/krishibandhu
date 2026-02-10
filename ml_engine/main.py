@@ -310,14 +310,20 @@ CROP_DATA = [
 @app.post("/advisory/crop")
 async def recommend_crop(data: dict):
     try:
-        # Extract user inputs
-        N = float(data.get('nitrogen', 0))
-        P = float(data.get('phosphorus', 0))
-        K = float(data.get('potassium', 0))
-        temp = float(data.get('temperature', 0))
-        humidity = float(data.get('humidity', 0))
-        ph = float(data.get('ph', 0))
-        rainfall = float(data.get('rainfall', 0))
+        # Extract user inputs with safe conversion
+        try:
+            N = float(data.get('nitrogen', 0) or 0)
+            P = float(data.get('phosphorus', 0) or 0)
+            K = float(data.get('potassium', 0) or 0)
+            temp = float(data.get('temperature', 0) or 0)
+            humidity = float(data.get('humidity', 0) or 0)
+            ph = float(data.get('ph', 0) or 0)
+            rainfall = float(data.get('rainfall', 0) or 0)
+        except ValueError:
+             return {
+                "recommended_crops": ["Invalid Input Format"],
+                "reason": "Please ensure all fields contain valid numbers."
+            }
 
         # Sanity Check for Extreme Conditions
         if (temp > 50 or temp < -10 or 
@@ -326,39 +332,40 @@ async def recommend_crop(data: dict):
             rainfall < 0):
              return {
                 "recommended_crops": ["no crop in the whole world can be grown in this condition"],
-                "reason": "The provided environmental conditions (Temperature, pH, Humidity) are biologically impossible for crop growth."
+                "reason": "The provided environmental conditions are too extreme for any known crop."
             }
 
-        if crop_model:
-            # Create feature vector
-            features = pd.DataFrame([[N, P, K, temp, humidity, ph, rainfall]], 
-                                  columns=['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall'])
-            
-            # Get probabilities
-            probas = crop_model.predict_proba(features)[0]
-            
-            # Get class labels
-            classes = crop_model.classes_
-            
-            # Create (crop, probability) pairs
-            recommendations = sorted(zip(classes, probas), key=lambda x: x[1], reverse=True)
-            
-            # Get top 3 recommendations with > 10% confidence
-            top_crops = [crop for crop, prob in recommendations[:3] if prob > 0.10]
-            
-            if not top_crops:
-                top_crops = ["no crop in the whole world can be grown in this condition"]
-                reason = "The provided environmental conditions are too extreme for any known crop in our model."
-            else:
-                reason = f"Best suited for current soil nutrients, temperature ({temp}°C), and rainfall ({rainfall}mm) based on ML prediction."
+        # Rule-Based Matching (Distance Algorithm)
+        # Calculate compatibility score for each crop based on normalized difference
+        scored_crops = []
+        user_conditions = {'N': N, 'P': P, 'K': K, 'temp': temp, 'humidity': humidity, 'ph': ph, 'rainfall': rainfall}
         
-        else:
-             # Fallback if model load failed (though it shouldn't)
-             return {
-                "recommended_crops": ["Error loading model"],
-                "reason": "Please check server logs."
-            }
-
+        for crop in CROP_DATA:
+            score = 0
+            conditions = crop['conditions']
+            
+            # Calculate total normalized difference (lower is better match)
+            # Use max(1, val) to avoid division by zero
+            score += abs(N - conditions['N']) / max(1, conditions['N'])
+            score += abs(P - conditions['P']) / max(1, conditions['P'])
+            score += abs(K - conditions['K']) / max(1, conditions['K'])
+            score += abs(temp - conditions['temp']) / max(1, conditions['temp'])
+            score += abs(humidity - conditions['humidity']) / max(1, conditions['humidity'])
+            score += abs(ph - conditions['ph']) / max(1, conditions['ph'])
+            score += abs(rainfall - conditions['rainfall']) / max(1, conditions['rainfall'])
+            
+            scored_crops.append((crop['name'], score))
+        
+        # Sort by score (ascending: lower difference is better)
+        scored_crops.sort(key=lambda x: x[1])
+        
+        # Get top 3
+        top_crops = [name for name, score in scored_crops[:3]]
+        
+        # Determine reason based on best match
+        best_crop = scored_crops[0][0]
+        reason = f"Best suited for current soil nutrients and climate conditions, matching closely with {best_crop} requirements."
+        
         return {
             "recommended_crops": top_crops,
             "reason": reason

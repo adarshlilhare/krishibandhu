@@ -32,6 +32,7 @@ export default function CropAdvisory() {
             setResult(response.data);
         } catch (error) {
             console.error(error);
+            alert("An error occurred while fetching recommendations. Please try again.");
         } finally {
             setLoading(false);
         }

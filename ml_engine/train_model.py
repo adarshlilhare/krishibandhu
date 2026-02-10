@@ -1,92 +1,11 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
-def read_root():
-    return {"message": "KrishiBandhu ML Engine is running"}
-
-import json
-import hashlib
-
-# Load disease dataset
-with open('diseases.json', 'r') as f:
-    DISEASE_DATASET = json.load(f)
-
-import io
-from PIL import Image
-import numpy as np
 import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 import joblib
 
-# Load Model
-try:
-    crop_model = joblib.load('crop_recommender.pkl')
-    print("Crop Advisory Model Loaded Successfully")
-except Exception as e:
-    print(f"Error loading model: {e}")
-    crop_model = None
-
-@app.post("/predict/disease")
-async def predict_disease(file: UploadFile = File(...)):
-    # Read file content
-    content = await file.read()
-    
-    # 1. Check for "Plant-like" features (Green Color Dominance)
-    try:
-        image = Image.open(io.BytesIO(content)).convert('RGB')
-        img_array = np.array(image)
-        
-        # Calculate green dominance
-        # Simple heuristic: Count pixels where Green > Red and Green > Blue
-        # A more robust way is converting to HSV, but this is fast and effective for a mock
-        green_pixels = np.sum((img_array[:, :, 1] > img_array[:, :, 0]) & (img_array[:, :, 1] > img_array[:, :, 2]))
-        total_pixels = img_array.shape[0] * img_array.shape[1]
-        green_ratio = green_pixels / total_pixels
-        
-        # Threshold: If less than 10% of the image is "green-dominant", assume it's not a crop/plant
-        if green_ratio < 0.10:
-             return {
-                "disease": "No Crop or Plant Detected",
-                "confidence": 0.0,
-                "remedy": "The uploaded image does not appear to be a crop or plant leaf (insufficient green color). Please upload a clear image of a plant leaf."
-            }
-            
-    except Exception as e:
-        print(f"Error processing image: {e}")
-        # Fallback if image processing fails
-        pass
-
-    # 2. Deterministic Disease Selection (for valid crops)
-    file_hash = hashlib.md5(content).hexdigest()
-    
-    # Use the hash to deterministically select a disease from the dataset
-    index = int(file_hash, 16) % len(DISEASE_DATASET)
-    result = DISEASE_DATASET[index]
-
-    # Check for the 50-80% range logic
-    if 0.50 <= result['confidence'] <= 0.80:
-        return {
-            "disease": "No Disease Detected",
-            "crop": result.get('crop', 'Unknown'),
-            "confidence": result['confidence'],
-            "remedy": "No specific disease detected with high confidence. The plant appears to be relatively healthy or the symptoms are minor."
-        }
-    
-    return result
-
-# Crop Dataset with optimal conditions
-# Expanded Crop Dataset (30+ crops)
+# Crop Dataset with optimal conditions (Copied from main.py)
 CROP_DATA = [
     # Grains & Cereals
     {
@@ -307,69 +226,75 @@ CROP_DATA = [
     }
 ]
 
-@app.post("/advisory/crop")
-async def recommend_crop(data: dict):
-    try:
-        # Extract user inputs
-        N = float(data.get('nitrogen', 0))
-        P = float(data.get('phosphorus', 0))
-        K = float(data.get('potassium', 0))
-        temp = float(data.get('temperature', 0))
-        humidity = float(data.get('humidity', 0))
-        ph = float(data.get('ph', 0))
-        rainfall = float(data.get('rainfall', 0))
+def generate_synthetic_data(num_samples_per_crop=1000):
+    print("Generating synthetic dataset...")
+    data = []
+    labels = []
 
-        # Sanity Check for Extreme Conditions
-        if (temp > 50 or temp < -10 or 
-            ph < 0 or ph > 14 or 
-            humidity < 0 or humidity > 100 or 
-            rainfall < 0):
-             return {
-                "recommended_crops": ["no crop in the whole world can be grown in this condition"],
-                "reason": "The provided environmental conditions (Temperature, pH, Humidity) are biologically impossible for crop growth."
-            }
+    for crop in CROP_DATA:
+        name = crop['name']
+        cond = crop['conditions']
+        tol = crop['tolerance']
 
-        if crop_model:
-            # Create feature vector
-            features = pd.DataFrame([[N, P, K, temp, humidity, ph, rainfall]], 
-                                  columns=['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall'])
+        for _ in range(num_samples_per_crop):
+            # Generate random variations within tolerance
+            # We add some Gaussian noise to make it more realistic
             
-            # Get probabilities
-            probas = crop_model.predict_proba(features)[0]
-            
-            # Get class labels
-            classes = crop_model.classes_
-            
-            # Create (crop, probability) pairs
-            recommendations = sorted(zip(classes, probas), key=lambda x: x[1], reverse=True)
-            
-            # Get top 3 recommendations with > 10% confidence
-            top_crops = [crop for crop, prob in recommendations[:3] if prob > 0.10]
-            
-            if not top_crops:
-                top_crops = ["no crop in the whole world can be grown in this condition"]
-                reason = "The provided environmental conditions are too extreme for any known crop in our model."
-            else:
-                reason = f"Best suited for current soil nutrients, temperature ({temp}°C), and rainfall ({rainfall}mm) based on ML prediction."
-        
-        else:
-             # Fallback if model load failed (though it shouldn't)
-             return {
-                "recommended_crops": ["Error loading model"],
-                "reason": "Please check server logs."
-            }
+            # Nitrogen
+            n_val = np.random.normal(cond['N'], tol['N'] / 2)
+            # Phosphorus
+            p_val = np.random.normal(cond['P'], tol['P'] / 2)
+            # Potassium
+            k_val = np.random.normal(cond['K'], tol['K'] / 2)
+            # Temperature
+            temp_val = np.random.normal(cond['temp'], tol['temp'] / 2)
+            # Humidity
+            humidity_val = np.random.normal(cond['humidity'], tol['humidity'] / 2)
+            # pH
+            ph_val = np.random.normal(cond['ph'], tol['ph'] / 2)
+            # Rainfall
+            rainfall_val = np.random.normal(cond['rainfall'], tol['rainfall'] / 2)
 
-        return {
-            "recommended_crops": top_crops,
-            "reason": reason
-        }
+            # Ensure values are non-negative where appropriate
+            n_val = max(0, n_val)
+            p_val = max(0, p_val)
+            k_val = max(0, k_val)
+            humidity_val = max(0, min(100, humidity_val)) # 0-100%
+            ph_val = max(0, min(14, ph_val)) # 0-14 pH scale
+            rainfall_val = max(0, rainfall_val)
 
-    except Exception as e:
-        print(f"Error in advisory: {e}")
-        return {
-            "recommended_crops": ["Error processing data"],
-            "reason": "Please check your input values."
-        }
+            data.append([n_val, p_val, k_val, temp_val, humidity_val, ph_val, rainfall_val])
+            labels.append(name)
+
+    df = pd.DataFrame(data, columns=['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall'])
+    df['crop'] = labels
+    return df
+
+def train_model():
+    # 1. Generate Data
+    df = generate_synthetic_data()
+    print(f"Generated {len(df)} samples.")
+
+    # 2. Split Data
+    X = df.drop('crop', axis=1)
+    y = df['crop']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # 3. Train Model
+    print("Training Random Forest Classifier...")
+    # Reduced n_estimators and added max_depth to keep model size small (<100MB) for GitHub
+    model = RandomForestClassifier(n_estimators=30, max_depth=15, random_state=42)
+    model.fit(X_train, y_train)
+
+    # 4. Evaluate
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Model Accuracy: {accuracy * 100:.2f}%")
+
+    # 5. Save Model
+    # Use compression to further reduce file size
+    joblib.dump(model, 'crop_recommender.pkl', compress=3)
+    print("Model saved as 'crop_recommender.pkl'")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    train_model()

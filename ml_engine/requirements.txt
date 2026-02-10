@@ -4,3 +4,6 @@ python-multipart
 requests
 pillow
 numpy
+scikit-learn
+pandas
+joblib

@@ -52,7 +52,7 @@ function getDistance(str1: string, str2: string) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        let { cropName, origin, country, destinationRegion, transportMode, quality } = body;
+        let { cropName, origin, country, destinationRegion, transportMode, exportPort, quality } = body;
         
         cropName = (cropName || '').toLowerCase().trim();
         origin = (origin || '').toLowerCase().trim();
@@ -146,7 +146,7 @@ export async function POST(req: Request) {
             if (currencyInfo.code === 'EUR' || currencyInfo.code === 'GBP') internationalShipping = 35.0;
             
             // Domestic transit to port
-            const portDist = getDistance(origin, "nearest port");
+            const portDist = getDistance(origin, exportPort || "nearest port");
             let transitToPortInr = Math.max(50, (portDist / 100) * tRate); 
             let transitToPortForeign = transitToPortInr / currencyInfo.rate;
 

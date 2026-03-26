@@ -11,6 +11,7 @@ export default function MarketInsights() {
         country: '',
         destinationRegion: '',
         transportMode: 'small_truck',
+        exportPort: 'mumbai',
         quality: 'standard',
     });
     const [result, setResult] = useState<any>(null);
@@ -85,15 +86,28 @@ export default function MarketInsights() {
                             </div>
                         )}
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700">Transportation Mode</label>
-                            <select name="transportMode" value={predictForm.transportMode} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white font-medium cursor-pointer">
-                                <option value="tractor">Farm Tractor</option>
-                                <option value="small_truck">Small Truck / LCV</option>
-                                <option value="heavy_truck">Heavy Freight Truck</option>
-                                <option value="train">Cargo Train</option>
-                            </select>
-                        </div>
+                        {isDomestic ? (
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">Transportation Mode</label>
+                                <select name="transportMode" value={predictForm.transportMode} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white font-medium cursor-pointer">
+                                    <option value="tractor">Farm Tractor</option>
+                                    <option value="small_truck">Small Truck / LCV</option>
+                                    <option value="heavy_truck">Heavy Freight Truck</option>
+                                    <option value="train">Cargo Train</option>
+                                </select>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <label className="text-sm font-bold text-blue-800">Exporting Port in India</label>
+                                <select name="exportPort" value={predictForm.exportPort} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border-2 border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none !text-black !bg-blue-50/50 font-medium cursor-pointer">
+                                    <option value="mumbai">Mumbai Port (e.g., to Oman, UAE)</option>
+                                    <option value="kandla">Kandla Port (Middle East / Global)</option>
+                                    <option value="chennai">Chennai Port (SE Asia)</option>
+                                    <option value="kolkata">Kolkata Port (Asia Pacific)</option>
+                                    <option value="cochin">Cochin Port (Europe / US)</option>
+                                </select>
+                            </div>
+                        )}
                         
                         <div className={`space-y-2 ${!isDomestic ? 'md:col-span-1 lg:col-span-2' : 'md:col-span-1 lg:col-span-2'}`}>
                             <label className="text-sm font-bold text-gray-700">Crop Quality Grade</label>

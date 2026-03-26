@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 interface SpeechRecognitionHook {
   isListening: boolean;
@@ -11,18 +11,24 @@ interface SpeechRecognitionHook {
 
 export function useSpeechRecognition(): SpeechRecognitionHook {
   const [isListening, setIsListening] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
   const callbackRef = useRef<((text: string) => void) | null>(null);
 
-  const isSupported = typeof window !== 'undefined' && 
-    ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      setIsSupported(true);
+    }
+  }, []);
 
   const startListening = useCallback((onResult: (text: string) => void) => {
-    if (!isSupported) return;
+    if (typeof window === 'undefined') return;
     
     callbackRef.current = onResult;
 
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) return;
+    
     const recognition = new SpeechRecognition();
     
     recognition.lang = 'en-IN';

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, X, Loader2, AlertCircle, CheckCircle, Leaf, Activity, Droplets, Video, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CursorEffect from '@/components/CursorEffect';
@@ -12,11 +12,20 @@ export default function DiseaseDetection() {
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [showCamera, setShowCamera] = useState(false);
+    const [stream, setStream] = useState<MediaStream | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const nativeCameraRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
+
+    // Properly initialize camera video when element becomes available
+    useEffect(() => {
+        if (showCamera && stream && videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(err => console.error("Error playing video:", err));
+        }
+    }, [showCamera, stream]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -44,44 +53,32 @@ export default function DiseaseDetection() {
         setError(null);
         try {
             const constraints = [
-                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+                { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
                 { video: { facingMode: 'environment' } },
                 { video: true }
             ];
 
-            let stream: MediaStream | null = null;
+            let activeStream: MediaStream | null = null;
             let lastError: any = null;
 
             for (const constraint of constraints) {
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia(constraint);
-                    if (stream) break;
+                    activeStream = await navigator.mediaDevices.getUserMedia(constraint);
+                    if (activeStream) break;
                 } catch (err) {
                     lastError = err;
-                    console.warn('Constraint failed:', constraint, err);
                 }
             }
 
-            if (!stream) {
-                throw lastError || new Error('Could not access camera');
-            }
+            if (!activeStream) throw lastError || new Error('Access denied');
 
-            streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                // Important: wait for metadata to load and then play
-                videoRef.current.onloadedmetadata = () => {
-                    videoRef.current?.play().catch(e => console.error('Video play error:', e));
-                };
-            }
+            setStream(activeStream);
+            streamRef.current = activeStream;
             setShowCamera(true);
             setResult(null);
         } catch (err: any) {
             console.error('Camera Error:', err);
-            let errorMessage = 'Camera access denied or not supported. Try using "Select File" instead.';
-            if (err.name === 'NotAllowedError') errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.';
-            if (err.name === 'NotFoundError') errorMessage = 'No camera found on this device.';
-            setError(errorMessage);
+            setError('Camera access denied. Please allow permissions and use HTTPS.');
         } finally {
             setLoading(false);
         }
@@ -111,6 +108,7 @@ export default function DiseaseDetection() {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
+        setStream(null);
         setShowCamera(false);
     };
 

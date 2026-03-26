@@ -84,23 +84,50 @@ export default function DiseaseDetection() {
         }
     };
 
+    const [isFlashing, setIsFlashing] = useState(false);
+
     const capturePhoto = () => {
-        if (!videoRef.current || !canvasRef.current) return;
+        if (!videoRef.current || !canvasRef.current) {
+            console.error("Video or Canvas ref not found");
+            return;
+        }
+        
         const video = videoRef.current;
         const canvas = canvasRef.current;
+        
+        // Ensure video has dimensions
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+            console.warn("Video dimensions are not yet available");
+            return;
+        }
+
+        // Visual flash effect
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 150);
+
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        
         ctx.drawImage(video, 0, 0);
-        canvas.toBlob((blob) => {
-            if (blob) {
-                const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
-                setSelectedImage(file);
-                setPreviewUrl(canvas.toDataURL('image/jpeg'));
-                stopCamera();
-            }
-        }, 'image/jpeg', 0.9);
+        
+        try {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            setPreviewUrl(dataUrl);
+            
+            // Convert to file for the backend
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+                    setSelectedImage(file);
+                    stopCamera();
+                }
+            }, 'image/jpeg', 0.9);
+        } catch (err) {
+            console.error("Capture error:", err);
+            setError("Failed to capture photo. Please try again.");
+        }
     };
 
     const stopCamera = () => {
@@ -189,6 +216,18 @@ export default function DiseaseDetection() {
                                 <button onClick={stopCamera} className="absolute top-4 right-4 bg-black/50 backdrop-blur p-2.5 rounded-full hover:bg-black/70 text-white z-20">
                                     <XCircle className="h-5 w-5" />
                                 </button>
+
+                                {/* Flash Effect */}
+                                <AnimatePresence>
+                                    {isFlashing && (
+                                        <motion.div 
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="absolute inset-0 bg-white z-30"
+                                        />
+                                    )}
+                                </AnimatePresence>
                             </div>
                             <div className="flex justify-center">
                                 <button onClick={capturePhoto} className="bg-green-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-green-700 shadow-xl flex items-center gap-3">

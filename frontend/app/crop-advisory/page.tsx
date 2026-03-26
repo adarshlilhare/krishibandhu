@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Sprout, CloudSun, MapPin, Droplets, Loader2, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 import CursorEffect from '@/components/CursorEffect';
 
 export default function CropAdvisory() {
@@ -26,10 +25,16 @@ export default function CropAdvisory() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setResult(null);
         try {
-            // Pointing to backend proxy
-            const response = await axios.post('/api/crop-advisory', formData);
-            setResult(response.data);
+            const res = await fetch('/api/crop-advisory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+            if (!res.ok) throw new Error('API request failed');
+            const data = await res.json();
+            setResult(data);
         } catch (error) {
             console.error(error);
             alert("An error occurred while fetching recommendations. Please try again.");

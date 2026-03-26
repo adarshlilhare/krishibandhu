@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { Upload, Camera, X, Loader2, AlertCircle, CheckCircle, Leaf, ArrowRight, Activity, Droplets } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 import CursorEffect from '@/components/CursorEffect';
 
 export default function DiseaseDetection() {
@@ -45,12 +44,13 @@ export default function DiseaseDetection() {
         formData.append('image', selectedImage);
 
         try {
-            const response = await axios.post('/api/disease-detection', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const res = await fetch('/api/disease-detection', {
+                method: 'POST',
+                body: formData,
             });
-            setResult(response.data);
+            if (!res.ok) throw new Error('Analysis failed');
+            const data = await res.json();
+            setResult(data);
         } catch (err) {
             console.error(err);
             setError('Failed to analyze image. Please try again.');

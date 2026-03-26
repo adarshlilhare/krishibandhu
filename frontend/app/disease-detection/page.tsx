@@ -45,7 +45,7 @@ export default function DiseaseDetection() {
         formData.append('image', selectedImage);
 
         try {
-            const response = await axios.post('/api/python/predict/disease', formData, {
+            const response = await axios.post('/api/disease-detection', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

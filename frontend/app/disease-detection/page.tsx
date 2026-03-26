@@ -4,12 +4,8 @@ import { useState, useRef } from 'react';
 import { Upload, Camera, X, Loader2, AlertCircle, CheckCircle, Leaf, Activity, Droplets, Video, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CursorEffect from '@/components/CursorEffect';
-import { useAuth } from '@/components/AuthContext';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function DiseaseDetection() {
-    const { user } = useAuth();
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -101,16 +97,6 @@ export default function DiseaseDetection() {
             if (!res.ok) throw new Error('Analysis failed');
             const data = await res.json();
             setResult(data);
-            // Save to Firestore
-            if (user) {
-                try {
-                    await addDoc(collection(db, 'users', user.uid, 'history'), {
-                        type: 'disease_detection',
-                        result: data,
-                        timestamp: new Date().toISOString(),
-                    });
-                } catch (e) { /* silently fail */ }
-            }
         } catch (err) {
             console.error(err);
             setError('Failed to analyze image. Please try again.');

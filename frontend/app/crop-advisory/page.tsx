@@ -4,13 +4,9 @@ import { useState } from 'react';
 import { Sprout, CloudSun, MapPin, Droplets, Loader2, CheckCircle, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CursorEffect from '@/components/CursorEffect';
-import { useAuth } from '@/components/AuthContext';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function CropAdvisory() {
-    const { user } = useAuth();
     const { isListening, startListening, stopListening, isSupported } = useSpeechRecognition();
     const [activeField, setActiveField] = useState<string | null>(null);
     const [formData, setFormData] = useState({
@@ -58,17 +54,6 @@ export default function CropAdvisory() {
             if (!res.ok) throw new Error('API request failed');
             const data = await res.json();
             setResult(data);
-            // Save to Firestore
-            if (user) {
-                try {
-                    await addDoc(collection(db, 'users', user.uid, 'history'), {
-                        type: 'crop_advisory',
-                        input: formData,
-                        result: data,
-                        timestamp: new Date().toISOString(),
-                    });
-                } catch (e) { /* silently fail Firestore save */ }
-            }
         } catch (error) {
             console.error(error);
             alert("An error occurred while fetching recommendations. Please try again.");

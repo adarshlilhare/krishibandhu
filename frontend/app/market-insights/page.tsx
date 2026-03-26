@@ -3,13 +3,9 @@
 import { useState } from 'react';
 import { Loader2, TrendingUp, PackageSearch, Globe, ShieldCheck, MapPin, Store, Landmark, Truck, Mic, MicOff } from 'lucide-react';
 import CursorEffect from '@/components/CursorEffect';
-import { useAuth } from '@/components/AuthContext';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function MarketInsights() {
-    const { user } = useAuth();
     const { isListening, startListening, stopListening, isSupported } = useSpeechRecognition();
     const [activeField, setActiveField] = useState<string | null>(null);
 
@@ -51,17 +47,6 @@ export default function MarketInsights() {
             const data = await res.json();
             if (data.status === "success") {
                 setResult(data);
-                // Save to Firestore
-                if (user) {
-                    try {
-                        await addDoc(collection(db, 'users', user.uid, 'history'), {
-                            type: 'market_insights',
-                            input: predictForm,
-                            result: data,
-                            timestamp: new Date().toISOString(),
-                        });
-                    } catch (e) { /* silently fail */ }
-                }
             } else {
                 console.error("API failed:", data.message);
             }

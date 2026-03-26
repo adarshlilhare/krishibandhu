@@ -13,6 +13,7 @@ export default function DiseaseDetection() {
     const [error, setError] = useState<string | null>(null);
     const [showCamera, setShowCamera] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const nativeCameraRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -39,51 +40,9 @@ export default function DiseaseDetection() {
     };
 
     const startCamera = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Try high resolution with environment camera first
-            const constraints = {
-                video: { 
-                    facingMode: { ideal: 'environment' }, 
-                    width: { ideal: 1920 }, 
-                    height: { ideal: 1080 } 
-                }
-            };
-            
-            let stream: MediaStream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-            } catch (firstErr) {
-                console.warn('Initial camera constraints failed, trying fallback...', firstErr);
-                // Fallback to simpler constraints
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-            }
-
-            streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                // Explicitly play for mobile compatibility
-                try {
-                    await videoRef.current.play();
-                } catch (playErr) {
-                    console.error('Error playing video stream:', playErr);
-                }
-            }
-            setShowCamera(true);
-            setResult(null);
-        } catch (err: any) {
-            console.error('Camera Error:', err);
-            let errorMessage = 'Camera access denied. Please allow camera permissions and try again.';
-            if (err.name === 'NotAllowedError') errorMessage = 'Permission denied. Please enable camera access in your browser settings.';
-            if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') errorMessage = 'No camera found on this device.';
-            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') errorMessage = 'Camera is already in use by another application.';
-            
-            setError(errorMessage);
-        } finally {
-            setLoading(false);
+        // Use native device camera capture for maximum compatibility
+        if (nativeCameraRef.current) {
+            nativeCameraRef.current.click();
         }
     };
 
@@ -229,6 +188,7 @@ export default function DiseaseDetection() {
                                 <h3 className="text-xl font-bold text-gray-900 mb-3">Upload an Image</h3>
                                 <p className="text-gray-500 mb-8 max-w-sm mx-auto">Drag and drop your plant leaf image here, or click to browse from your device</p>
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
+                                <input type="file" ref={nativeCameraRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileSelect} />
                                 <button className="bg-green-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-green-700 transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-0.5">
                                     Select File
                                 </button>
@@ -240,7 +200,7 @@ export default function DiseaseDetection() {
                                     className="flex items-center gap-3 px-8 py-3 rounded-full font-semibold border-2 border-green-600 text-green-700 hover:bg-green-50 transition-all"
                                 >
                                     <Video className="h-5 w-5" />
-                                    Use Camera / Scanner
+                                    Open Device Camera / Scanner
                                 </button>
                             </div>
                         </div>
@@ -248,9 +208,29 @@ export default function DiseaseDetection() {
 
                     {!showCamera && previewUrl && (
                         <div className="space-y-8">
-                            <div className="relative rounded-2xl overflow-hidden bg-gray-50 max-h-[500px] flex items-center justify-center shadow-inner">
+                            <div className="relative rounded-2xl overflow-hidden bg-gray-50 aspect-[3/4] md:aspect-video flex items-center justify-center shadow-inner border-4 border-green-500/30">
                                 <img src={previewUrl} alt="Preview" className="max-w-full max-h-full object-contain" />
-                                <button onClick={clearImage} className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2.5 rounded-full hover:bg-white text-gray-700 transition-all shadow-sm hover:shadow-md">
+                                
+                                {/* Photo Processing/Scanner Overlay */}
+                                {!result && (
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        {/* Scanning Line */}
+                                        <motion.div 
+                                            initial={{ top: '0%' }}
+                                            animate={{ top: '100%' }}
+                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_15px_rgba(74,222,128,0.8)] z-10"
+                                        />
+                                        
+                                        {/* Corner Accents */}
+                                        <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-green-500 rounded-tl-lg" />
+                                        <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-green-500 rounded-tr-lg" />
+                                        <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-lg" />
+                                        <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-lg" />
+                                    </div>
+                                )}
+
+                                <button onClick={clearImage} className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2.5 rounded-full hover:bg-white text-gray-700 transition-all shadow-sm hover:shadow-md z-20">
                                     <X className="h-5 w-5" />
                                 </button>
                             </div>

@@ -3,12 +3,16 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Leaf, Sprout, CloudSun, BarChart3, Mic } from 'lucide-react';
+import { Menu, X, Leaf, Sprout, CloudSun, BarChart3, Mic, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/components/AuthContext';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
 export default function Navbar() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
+    const { user, logout } = useAuth();
+    const { isListening, startListening, stopListening, isSupported } = useSpeechRecognition();
 
     if (pathname === '/') return null;
 
@@ -18,6 +22,26 @@ export default function Navbar() {
         { name: 'Crop Advisory', href: '/crop-advisory', icon: CloudSun },
         { name: 'Market Insights', href: '/market-insights', icon: BarChart3 },
     ];
+
+    const handleMicClick = () => {
+        if (isListening) {
+            stopListening();
+        } else {
+            startListening((text) => {
+                // Global voice: try to navigate based on spoken command
+                const lower = text.toLowerCase();
+                if (lower.includes('disease') || lower.includes('detect')) {
+                    window.location.href = '/disease-detection';
+                } else if (lower.includes('crop') || lower.includes('advisory')) {
+                    window.location.href = '/crop-advisory';
+                } else if (lower.includes('market') || lower.includes('price') || lower.includes('insight')) {
+                    window.location.href = '/market-insights';
+                } else if (lower.includes('home') || lower.includes('dashboard')) {
+                    window.location.href = '/dashboard';
+                }
+            });
+        }
+    };
 
     return (
         <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-green-100">
@@ -32,23 +56,70 @@ export default function Navbar() {
                         </Link>
                     </div>
 
-                    <div className="hidden md:flex items-center space-x-8">
+                    <div className="hidden md:flex items-center space-x-6">
                         {navItems.map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className="flex items-center gap-1.5 text-gray-600 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    pathname === item.href 
+                                        ? 'text-green-700 bg-green-50' 
+                                        : 'text-gray-600 hover:text-green-600'
+                                }`}
                             >
                                 <item.icon className="h-4 w-4" />
                                 {item.name}
                             </Link>
                         ))}
-                        <button className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors shadow-sm">
-                            <Mic className="h-5 w-5" />
-                        </button>
+
+                        {isSupported && (
+                            <button 
+                                onClick={handleMicClick}
+                                className={`p-2 rounded-full transition-all shadow-sm ${
+                                    isListening 
+                                        ? 'bg-red-500 text-white animate-pulse shadow-red-200' 
+                                        : 'bg-green-600 text-white hover:bg-green-700'
+                                }`}
+                                title={isListening ? 'Listening... click to stop' : 'Voice navigation'}
+                            >
+                                <Mic className="h-5 w-5" />
+                            </button>
+                        )}
+
+                        {user && (
+                            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-gray-200">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-green-100 p-1.5 rounded-full">
+                                        <User className="h-4 w-4 text-green-700" />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">
+                                        {user.displayName || 'Farmer'}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={logout}
+                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                    title="Logout"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex items-center md:hidden">
+                    <div className="flex items-center md:hidden gap-2">
+                        {isSupported && (
+                            <button 
+                                onClick={handleMicClick}
+                                className={`p-2 rounded-full transition-all ${
+                                    isListening 
+                                        ? 'bg-red-500 text-white animate-pulse' 
+                                        : 'bg-green-600 text-white'
+                                }`}
+                            >
+                                <Mic className="h-5 w-5" />
+                            </button>
+                        )}
                         <button
                             onClick={() => setIsOpen(!isOpen)}
                             className="inline-flex items-center justify-center p-2 rounded-md text-green-600 hover:text-green-800 focus:outline-none"
@@ -79,6 +150,15 @@ export default function Navbar() {
                                     {item.name}
                                 </Link>
                             ))}
+                            {user && (
+                                <button
+                                    onClick={() => { logout(); setIsOpen(false); }}
+                                    className="flex items-center gap-2 text-red-500 hover:bg-red-50 w-full px-3 py-2 rounded-md text-base font-medium"
+                                >
+                                    <LogOut className="h-5 w-5" />
+                                    Logout
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 )}

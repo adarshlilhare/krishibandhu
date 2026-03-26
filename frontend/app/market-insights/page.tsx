@@ -1,10 +1,30 @@
 "use client";
 
 import { useState } from 'react';
-import { Loader2, TrendingUp, PackageSearch, Globe, ShieldCheck, MapPin, Store, Landmark, Truck } from 'lucide-react';
+import { Loader2, TrendingUp, PackageSearch, Globe, ShieldCheck, MapPin, Store, Landmark, Truck, Mic, MicOff } from 'lucide-react';
 import CursorEffect from '@/components/CursorEffect';
+import { useAuth } from '@/components/AuthContext';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function MarketInsights() {
+    const { user } = useAuth();
+    const { isListening, startListening, stopListening, isSupported } = useSpeechRecognition();
+    const [activeField, setActiveField] = useState<string | null>(null);
+
+    const handleVoice = (fieldName: string) => {
+        if (isListening && activeField === fieldName) {
+            stopListening();
+            setActiveField(null);
+            return;
+        }
+        setActiveField(fieldName);
+        startListening((text) => {
+            setPredictForm(prev => ({ ...prev, [fieldName]: text }));
+            setActiveField(null);
+        });
+    };
     const [predictForm, setPredictForm] = useState({
         cropName: '',
         origin: '',
@@ -31,6 +51,17 @@ export default function MarketInsights() {
             const data = await res.json();
             if (data.status === "success") {
                 setResult(data);
+                // Save to Firestore
+                if (user) {
+                    try {
+                        await addDoc(collection(db, 'users', user.uid, 'history'), {
+                            type: 'market_insights',
+                            input: predictForm,
+                            result: data,
+                            timestamp: new Date().toISOString(),
+                        });
+                    } catch (e) { /* silently fail */ }
+                }
             } else {
                 console.error("API failed:", data.message);
             }
@@ -68,15 +99,24 @@ export default function MarketInsights() {
                     <form onSubmit={handlePredictSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700">Crop Name</label>
-                            <input required type="text" name="cropName" value={predictForm.cropName} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white placeholder:!text-gray-400 font-medium transition-all" placeholder="e.g. Wheat" />
+                            <div className="relative">
+                                <input required type="text" name="cropName" value={predictForm.cropName} onChange={handleInputChange} className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white placeholder:!text-gray-400 font-medium transition-all" placeholder="e.g. Wheat" />
+                                {isSupported && <button type="button" onClick={() => handleVoice('cropName')} className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${isListening && activeField === 'cropName' ? 'bg-red-500 text-white animate-pulse' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}>{isListening && activeField === 'cropName' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}</button>}
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700">Origin / Farm Locality</label>
-                            <input required type="text" name="origin" value={predictForm.origin} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white placeholder:!text-gray-400 font-medium transition-all" placeholder="Your Village/Tehsil" />
+                            <div className="relative">
+                                <input required type="text" name="origin" value={predictForm.origin} onChange={handleInputChange} className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white placeholder:!text-gray-400 font-medium transition-all" placeholder="Your Village/Tehsil" />
+                                {isSupported && <button type="button" onClick={() => handleVoice('origin')} className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${isListening && activeField === 'origin' ? 'bg-red-500 text-white animate-pulse' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}>{isListening && activeField === 'origin' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}</button>}
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700">Destination Country</label>
-                            <input required type="text" name="country" value={predictForm.country} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white placeholder:!text-gray-400 font-medium transition-all" placeholder="e.g. India, USA" />
+                            <div className="relative">
+                                <input required type="text" name="country" value={predictForm.country} onChange={handleInputChange} className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none !text-black !bg-white placeholder:!text-gray-400 font-medium transition-all" placeholder="e.g. India, USA" />
+                                {isSupported && <button type="button" onClick={() => handleVoice('country')} className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${isListening && activeField === 'country' ? 'bg-red-500 text-white animate-pulse' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}>{isListening && activeField === 'country' ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}</button>}
+                            </div>
                         </div>
 
                         {isDomestic && (

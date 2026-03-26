@@ -16,8 +16,9 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
   const callbackRef = useRef<((text: string) => void) | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      setIsSupported(true);
+    if (typeof window !== 'undefined') {
+      const isAvailable = !!((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition);
+      setIsSupported(isAvailable);
     }
   }, []);
 
@@ -27,8 +28,18 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
     callbackRef.current = onResult;
 
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      console.error('Speech Recognition not supported in this browser.');
+      return;
+    }
     
+    // Stop existing instance if any
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) {}
+    }
+
     const recognition = new SpeechRecognition();
     
     recognition.lang = 'en-IN';
@@ -36,14 +47,27 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.trim();
-      callbackRef.current?.(transcript);
+      if (event.results && event.results.length > 0) {
+        const transcript = event.results[0][0].transcript.trim();
+        callbackRef.current?.(transcript);
+      }
       setIsListening(false);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      console.error('Speech Recognition Error:', event.error);
       setIsListening(false);
+      
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied. Please enable microphone permissions in your browser settings.');
+      } else if (event.error === 'network') {
+        alert('Network error during speech recognition. Please check your connection.');
+      }
     };
 
     recognition.onend = () => {
@@ -51,13 +75,35 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-  }, [isSupported]);
+    
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to start recognition:', err);
+      setIsListening(false);
+    }
+  }, []);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        try {
+          recognitionRef.current.abort();
+        } catch (abortErr) {}
+      }
+    }
     setIsListening(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
   }, []);
 
   return { isListening, startListening, stopListening, isSupported };

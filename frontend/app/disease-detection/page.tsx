@@ -39,19 +39,51 @@ export default function DiseaseDetection() {
     };
 
     const startCamera = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
+            // Try high resolution with environment camera first
+            const constraints = {
+                video: { 
+                    facingMode: { ideal: 'environment' }, 
+                    width: { ideal: 1920 }, 
+                    height: { ideal: 1080 } 
+                }
+            };
+            
+            let stream: MediaStream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (firstErr) {
+                console.warn('Initial camera constraints failed, trying fallback...', firstErr);
+                // Fallback to simpler constraints
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+            }
+
             streamRef.current = stream;
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                // Explicitly play for mobile compatibility
+                try {
+                    await videoRef.current.play();
+                } catch (playErr) {
+                    console.error('Error playing video stream:', playErr);
+                }
             }
             setShowCamera(true);
             setResult(null);
-            setError(null);
-        } catch (err) {
-            setError('Camera access denied. Please allow camera permissions and try again.');
+        } catch (err: any) {
+            console.error('Camera Error:', err);
+            let errorMessage = 'Camera access denied. Please allow camera permissions and try again.';
+            if (err.name === 'NotAllowedError') errorMessage = 'Permission denied. Please enable camera access in your browser settings.';
+            if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') errorMessage = 'No camera found on this device.';
+            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') errorMessage = 'Camera is already in use by another application.';
+            
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -134,11 +166,44 @@ export default function DiseaseDetection() {
                     {/* Camera View */}
                     {showCamera && (
                         <div className="space-y-4">
-                            <div className="relative rounded-2xl overflow-hidden bg-black">
-                                <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-[500px] object-contain" />
-                                <button onClick={stopCamera} className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2.5 rounded-full hover:bg-white text-gray-700 transition-all shadow-sm">
+                            <div className="relative rounded-2xl overflow-hidden bg-black aspect-[3/4] md:aspect-video flex items-center justify-center border-4 border-green-500/30">
+                                <video 
+                                    ref={videoRef} 
+                                    autoPlay 
+                                    playsInline 
+                                    muted 
+                                    className="w-full h-full object-cover" 
+                                />
+                                
+                                {/* Scanner Overlay */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                    {/* Scanning Line */}
+                                    <motion.div 
+                                        initial={{ top: '0%' }}
+                                        animate={{ top: '100%' }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                        className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_15px_rgba(74,222,128,0.8)] z-10"
+                                    />
+                                    
+                                    {/* Corner Accents */}
+                                    <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-green-500 rounded-tl-lg" />
+                                    <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-green-500 rounded-tr-lg" />
+                                    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-lg" />
+                                    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-lg" />
+                                    
+                                    {/* Center Target */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                                        <div className="w-48 h-48 border-2 border-dashed border-white rounded-3xl" />
+                                    </div>
+                                </div>
+
+                                <button onClick={stopCamera} className="absolute top-4 right-4 bg-black/50 backdrop-blur p-2.5 rounded-full hover:bg-black/70 text-white transition-all shadow-sm z-20">
                                     <XCircle className="h-5 w-5" />
                                 </button>
+
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur rounded-full border border-white/20 text-white text-xs font-medium z-20">
+                                    Align plant leaf within frame
+                                </div>
                             </div>
                             <div className="flex justify-center">
                                 <button onClick={capturePhoto} className="bg-green-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-green-700 transition-all shadow-xl flex items-center gap-3">

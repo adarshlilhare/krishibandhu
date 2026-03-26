@@ -40,9 +40,50 @@ export default function DiseaseDetection() {
     };
 
     const startCamera = async () => {
-        // Use native device camera capture for maximum compatibility
-        if (nativeCameraRef.current) {
-            nativeCameraRef.current.click();
+        setLoading(true);
+        setError(null);
+        try {
+            const constraints = [
+                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+                { video: { facingMode: 'environment' } },
+                { video: true }
+            ];
+
+            let stream: MediaStream | null = null;
+            let lastError: any = null;
+
+            for (const constraint of constraints) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraint);
+                    if (stream) break;
+                } catch (err) {
+                    lastError = err;
+                    console.warn('Constraint failed:', constraint, err);
+                }
+            }
+
+            if (!stream) {
+                throw lastError || new Error('Could not access camera');
+            }
+
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                // Important: wait for metadata to load and then play
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current?.play().catch(e => console.error('Video play error:', e));
+                };
+            }
+            setShowCamera(true);
+            setResult(null);
+        } catch (err: any) {
+            console.error('Camera Error:', err);
+            let errorMessage = 'Camera access denied or not supported. Try using "Select File" instead.';
+            if (err.name === 'NotAllowedError') errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.';
+            if (err.name === 'NotFoundError') errorMessage = 'No camera found on this device.';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -134,38 +175,25 @@ export default function DiseaseDetection() {
                                     className="w-full h-full object-cover" 
                                 />
                                 
-                                {/* Scanner Overlay */}
                                 <div className="absolute inset-0 pointer-events-none">
-                                    {/* Scanning Line */}
                                     <motion.div 
                                         initial={{ top: '0%' }}
                                         animate={{ top: '100%' }}
                                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                         className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_15px_rgba(74,222,128,0.8)] z-10"
                                     />
-                                    
-                                    {/* Corner Accents */}
                                     <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-green-500 rounded-tl-lg" />
                                     <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-green-500 rounded-tr-lg" />
                                     <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-lg" />
                                     <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-lg" />
-                                    
-                                    {/* Center Target */}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                                        <div className="w-48 h-48 border-2 border-dashed border-white rounded-3xl" />
-                                    </div>
                                 </div>
 
-                                <button onClick={stopCamera} className="absolute top-4 right-4 bg-black/50 backdrop-blur p-2.5 rounded-full hover:bg-black/70 text-white transition-all shadow-sm z-20">
+                                <button onClick={stopCamera} className="absolute top-4 right-4 bg-black/50 backdrop-blur p-2.5 rounded-full hover:bg-black/70 text-white z-20">
                                     <XCircle className="h-5 w-5" />
                                 </button>
-
-                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur rounded-full border border-white/20 text-white text-xs font-medium z-20">
-                                    Align plant leaf within frame
-                                </div>
                             </div>
                             <div className="flex justify-center">
-                                <button onClick={capturePhoto} className="bg-green-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-green-700 transition-all shadow-xl flex items-center gap-3">
+                                <button onClick={capturePhoto} className="bg-green-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-green-700 shadow-xl flex items-center gap-3">
                                     <Camera className="h-6 w-6" /> Capture Photo
                                 </button>
                             </div>
@@ -189,9 +217,20 @@ export default function DiseaseDetection() {
                                 <p className="text-gray-500 mb-8 max-w-sm mx-auto">Drag and drop your plant leaf image here, or click to browse from your device</p>
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
                                 <input type="file" ref={nativeCameraRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileSelect} />
-                                <button className="bg-green-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-green-700 transition-all shadow-lg hover:shadow-green-200 hover:-translate-y-0.5">
-                                    Select File
-                                </button>
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                    <button 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="bg-green-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-green-700 transition-all shadow-lg"
+                                    >
+                                        Select from Gallery
+                                    </button>
+                                    <button 
+                                        onClick={() => nativeCameraRef.current?.click()}
+                                        className="bg-white text-green-700 px-8 py-3 rounded-full font-semibold border-2 border-green-600 hover:bg-green-50 transition-all"
+                                    >
+                                        Use System Camera
+                                    </button>
+                                </div>
                             </div>
                             
                             <div className="flex justify-center">
@@ -199,8 +238,8 @@ export default function DiseaseDetection() {
                                     onClick={startCamera}
                                     className="flex items-center gap-3 px-8 py-3 rounded-full font-semibold border-2 border-green-600 text-green-700 hover:bg-green-50 transition-all"
                                 >
-                                    <Video className="h-5 w-5" />
-                                    Open Device Camera / Scanner
+                                    <Camera className="h-5 w-5" />
+                                    Use Real-Time Scanner
                                 </button>
                             </div>
                         </div>

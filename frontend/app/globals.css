@@ -10,6 +10,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-primary: #2d5a27;
+  --color-secondary: #8bc34a;
+  --color-accent: #f9a825;
+  --color-earth: #5d4037;
+  --color-leaf: #4caf50;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -25,13 +30,20 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   scroll-behavior: smooth;
 }
-
 @layer utilities {
   .glass-card {
     @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
-  }
-  
+  } 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-600;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-600;               
+  }
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all bg-white/50 text-stone-900 placeholder:text-stone-400;
+  }
+  .btn-primary {
+    @apply w-full py-3 px-6 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-primary/20 active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply w-full py-3 px-6 bg-white border-2 border-primary text-primary hover:bg-primary/5 font-semibold rounded-xl transition-all active:scale-[0.98];
   }
 }

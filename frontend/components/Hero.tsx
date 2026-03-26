@@ -55,7 +55,7 @@ export default function Hero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
-                    className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+                    className="flex flex-row flex-wrap gap-4 sm:gap-6 justify-center items-center"
                 >
                     <Link
                         href="/disease-detection"
@@ -69,9 +69,16 @@ export default function Hero() {
 
                     <Link
                         href="/crop-advisory"
-                        className="px-8 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-white font-bold text-lg transition-all hover:scale-105"
+                        className="px-8 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-white font-bold text-lg transition-all hover:scale-105 shrink-0 whitespace-nowrap"
                     >
                         Get Advisory
+                    </Link>
+
+                    <Link
+                        href="/market-insights"
+                        className="px-8 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-white font-bold text-lg transition-all hover:scale-105 shrink-0 whitespace-nowrap"
+                    >
+                        Market Insights
                     </Link>
                 </motion.div>
             </div>

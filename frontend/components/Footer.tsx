@@ -1,7 +1,12 @@
+"use client";
+
 import Link from 'next/link';
 import { Leaf, Mail, Phone, MapPin } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+    const pathname = usePathname();
+    if (pathname === '/') return null;
     return (
         <footer className="bg-green-900 text-white pt-12 pb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

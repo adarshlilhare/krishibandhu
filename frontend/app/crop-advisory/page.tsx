@@ -28,7 +28,7 @@ export default function CropAdvisory() {
         setLoading(true);
         try {
             // Pointing to backend proxy
-            const response = await axios.post('http://localhost:5000/api/ml/crop-advisory', formData);
+            const response = await axios.post('/api/python/api/ml/crop-advisory', formData);
             setResult(response.data);
         } catch (error) {
             console.error(error);

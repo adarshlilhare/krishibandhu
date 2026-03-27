@@ -133,11 +133,16 @@ export default function DiseaseDetection() {
                         method: 'POST',
                         body: formData,
                     });
-                    if (!res.ok) throw new Error('Scan failed');
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.details || errorData.error || 'Scan failed');
+                    }
                     const data = await res.json();
                     setResult(data);
-                } catch (err) {
+                } catch (err: any) {
                     console.error("Scan error:", err);
+                    // Don't set global error for continuous scan to avoid flickering, 
+                    // just log it or show a toast
                 }
             }
         }, 'image/jpeg', 0.8);
@@ -200,12 +205,15 @@ export default function DiseaseDetection() {
                 method: 'POST',
                 body: formData,
             });
-            if (!res.ok) throw new Error('Analysis failed');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.details || errorData.error || 'Analysis failed');
+            }
             const data = await res.json();
             setResult(data);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError('Failed to analyze image. Please try again.');
+            setError(err.message || 'Failed to analyze image. Please try again.');
         } finally {
             setLoading(false);
         }

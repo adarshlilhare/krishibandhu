@@ -18,6 +18,7 @@ export async function POST(req: Request) {
         const mlFormData = new FormData();
         mlFormData.append('file', imageFile);
 
+        console.log(`Fetching ML engine at: ${ML_ENGINE_URL}/predict/disease`);
         const res = await fetch(`${ML_ENGINE_URL}/predict/disease`, {
             method: 'POST',
             body: mlFormData,
@@ -25,16 +26,22 @@ export async function POST(req: Request) {
 
         if (!res.ok) {
             const errorText = await res.text();
-            console.error('ML Engine Error:', errorText);
-            throw new Error('ML Engine failed to process image');
+            console.error('ML Engine Response Error:', res.status, errorText);
+            return NextResponse.json({ 
+                error: `ML Engine Error (${res.status})`, 
+                details: errorText 
+            }, { status: res.status });
         }
 
         const result = await res.json();
         return NextResponse.json(result);
 
     } catch (e: any) {
-        console.error('Disease Detection Route Error:', e);
-        return NextResponse.json({ error: e.message || "Failed to process image" }, { status: 500 });
+        console.error('Next.js Route Exception:', e.message);
+        return NextResponse.json({ 
+            error: "Failed to connect to ML Engine", 
+            details: e.message 
+        }, { status: 500 });
     }
 }
 

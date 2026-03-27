@@ -146,6 +146,14 @@ async def predict_disease(file: UploadFile = File(...)):
 
     # FALLBACK / MOCK LOGIC (If model missing or inference failed)
     if 'result' not in locals():
+        if not DISEASE_DATASET:
+             return {
+                "disease": "System Error: Mapping Data Missing",
+                "crop": "Unknown",
+                "confidence": 0.0,
+                "remedy": "The disease dataset could not be loaded on the server. Please check the server configuration."
+            }
+            
         file_hash = hashlib.md5(content).hexdigest()
         index = int(file_hash, 16) % len(DISEASE_DATASET)
         result = DISEASE_DATASET[index].copy()

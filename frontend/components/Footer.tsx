@@ -27,7 +27,6 @@ export default function Footer() {
                             <li><Link href="/disease-detection" className="hover:text-white transition-colors">Disease Detection</Link></li>
                             <li><Link href="/crop-advisory" className="hover:text-white transition-colors">Crop Advisory</Link></li>
                             <li><Link href="/market-insights" className="hover:text-white transition-colors">Market Insights</Link></li>
-                            <li><Link href="/weather" className="hover:text-white transition-colors">Weather Alerts</Link></li>
                         </ul>
                     </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Leaf, ShieldCheck, TrendingUp, CloudSun, Zap, Brain, Smartphone } from 'lucide-react';
+import { Leaf, ShieldCheck, TrendingUp, Zap, Brain, Smartphone } from 'lucide-react';
 import Hero from '@/components/Hero';
 import FeatureCard from '@/components/FeatureCard';
 import VisualStats from '@/components/VisualStats';
@@ -42,7 +42,7 @@ export default function Home() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Link href="/disease-detection">
               <FeatureCard
                 icon={ShieldCheck}
@@ -67,14 +67,7 @@ export default function Home() {
                 delay={0.2}
               />
             </Link>
-            <div className="pointer-events-none opacity-80 cursor-not-allowed">
-                <FeatureCard
-                  icon={CloudSun}
-                  title="Hyper-local Weather"
-                  description="Micro-climate forecasting to plan irrigation and harvesting with precision. (Coming Soon)"
-                  delay={0.3}
-                />
-            </div>
+
           </div>
         </div>
       </section>

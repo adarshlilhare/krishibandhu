@@ -13,8 +13,6 @@ export default function DiseaseDetection() {
     const [error, setError] = useState<string | null>(null);
     const [showCamera, setShowCamera] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
-    const [isScanning, setIsScanning] = useState(false);
-    const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const nativeCameraRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,25 +26,6 @@ export default function DiseaseDetection() {
             videoRef.current.play().catch(err => console.error("Error playing video:", err));
         }
     }, [showCamera, stream]);
-
-    // Continuous scanning effect
-    useEffect(() => {
-        if (isScanning && showCamera) {
-            scanIntervalRef.current = setInterval(() => {
-                if (!loading) {
-                    scanFrame();
-                }
-            }, 3000); // Scan every 3 seconds
-        } else {
-            if (scanIntervalRef.current) {
-                clearInterval(scanIntervalRef.current);
-                scanIntervalRef.current = null;
-            }
-        }
-        return () => {
-            if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
-        };
-    }, [isScanning, showCamera, loading]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -107,55 +86,22 @@ export default function DiseaseDetection() {
 
     const [isFlashing, setIsFlashing] = useState(false);
 
-    const scanFrame = async () => {
-        if (!videoRef.current || !canvasRef.current) return;
-        
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        
-        if (video.videoWidth === 0) return;
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        
-        ctx.drawImage(video, 0, 0);
-        
-        canvas.toBlob(async (blob) => {
-            if (blob) {
-                const file = new File([blob], 'scan.jpg', { type: 'image/jpeg' });
-                const formData = new FormData();
-                formData.append('image', file);
-
-                try {
-                    const res = await fetch('/api/disease-detection', {
-                        method: 'POST',
-                        body: formData,
-                    });
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        throw new Error(errorData.details || errorData.error || 'Scan failed');
-                    }
-                    const data = await res.json();
-                    setResult(data);
-                } catch (err: any) {
-                    console.error("Scan error:", err);
-                    // Don't set global error for continuous scan to avoid flickering, 
-                    // just log it or show a toast
-                }
-            }
-        }, 'image/jpeg', 0.8);
-    };
-
     const capturePhoto = () => {
-        if (!videoRef.current || !canvasRef.current) return;
+        if (!videoRef.current || !canvasRef.current) {
+            console.error("Video or Canvas ref not found");
+            return;
+        }
         
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
-        if (video.videoWidth === 0) return;
+        // Ensure video has dimensions
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+            console.warn("Video dimensions are not yet available");
+            return;
+        }
 
+        // Visual flash effect
         setIsFlashing(true);
         setTimeout(() => setIsFlashing(false), 150);
 
@@ -170,6 +116,7 @@ export default function DiseaseDetection() {
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             setPreviewUrl(dataUrl);
             
+            // Convert to file for the backend
             canvas.toBlob((blob) => {
                 if (blob) {
                     const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
@@ -179,12 +126,11 @@ export default function DiseaseDetection() {
             }, 'image/jpeg', 0.9);
         } catch (err) {
             console.error("Capture error:", err);
-            setError("Failed to capture photo.");
+            setError("Failed to capture photo. Please try again.");
         }
     };
 
     const stopCamera = () => {
-        setIsScanning(false);
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
@@ -205,15 +151,12 @@ export default function DiseaseDetection() {
                 method: 'POST',
                 body: formData,
             });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.details || errorData.error || 'Analysis failed');
-            }
+            if (!res.ok) throw new Error('Analysis failed');
             const data = await res.json();
             setResult(data);
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            setError(err.message || 'Failed to analyze image. Please try again.');
+            setError('Failed to analyze image. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -286,21 +229,10 @@ export default function DiseaseDetection() {
                                     )}
                                 </AnimatePresence>
                             </div>
-                            <div className="flex justify-center gap-4">
-                                <button 
-                                    onClick={() => setIsScanning(!isScanning)} 
-                                    className={`px-8 py-4 rounded-full font-bold text-lg shadow-xl flex items-center gap-3 transition-all ${
-                                        isScanning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'
-                                    } text-white`}
-                                >
-                                    {isScanning ? <><XCircle className="h-6 w-6" /> Stop Scanning</> : <><Activity className="h-6 w-6 animate-pulse" /> Start Continuous Scan</>}
+                            <div className="flex justify-center">
+                                <button onClick={capturePhoto} className="bg-green-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-green-700 shadow-xl flex items-center gap-3">
+                                    <Camera className="h-6 w-6" /> Capture Photo
                                 </button>
-                                
-                                {!isScanning && (
-                                    <button onClick={capturePhoto} className="bg-white text-green-700 border-2 border-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-green-50 shadow-xl flex items-center gap-3">
-                                        <Camera className="h-6 w-6" /> Capture Still
-                                    </button>
-                                )}
                             </div>
                             <canvas ref={canvasRef} className="hidden" />
                         </div>

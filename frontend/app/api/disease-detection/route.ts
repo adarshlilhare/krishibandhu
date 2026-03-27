@@ -1,51 +1,9 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
-const DISEASE_DATASET = [
-    { disease: "Apple Scab", crop: "Apple", confidence: 0.85, remedy: "Rake up and destroy fallen leaves to reduce overwintering spores. Apply fungicides like Captan, Myclobutanil, or Mancozeb at the green tip stage. Prune trees to improve air circulation." },
-    { disease: "Apple Black Rot", crop: "Apple", confidence: 0.65, remedy: "Prune out dead wood and remove mummified fruit from the tree. Treat with fungicides such as Thiophanate-methyl or Captan. Ensure proper sanitation in the orchard." },
-    { disease: "Apple Cedar Rust", crop: "Apple", confidence: 0.75, remedy: "Remove nearby juniper (red cedar) hosts if possible. Apply fungicides like Myclobutanil or Fenarimol starting at the pink stage of bud development." },
-    { disease: "Cherry Powdery Mildew", crop: "Cherry", confidence: 0.88, remedy: "Prune to improve air circulation and light penetration. Apply sulfur, potassium bicarbonate, or synthetic fungicides like Myclobutanil at the first sign of disease." },
-    { disease: "Corn Common Rust", crop: "Corn", confidence: 0.82, remedy: "Plant resistant corn hybrids. Apply fungicides (e.g., Azoxystrobin + Propiconazole) if infection is severe and occurs early in the season." },
-    { disease: "Corn Northern Leaf Blight", crop: "Corn", confidence: 0.60, remedy: "Rotate crops to reduce inoculum. Use resistant varieties. Apply fungicides like Mancozeb or Pyraclostrobin if lesions appear before silking." },
-    { disease: "Grape Black Rot", crop: "Grape", confidence: 0.70, remedy: "Remove mummified berries and infected canes. Apply fungicides (Mancozeb, Myclobutanil) from bud break through 4 weeks post-bloom." },
-    { disease: "Grape Esca (Black Measles)", crop: "Grape", confidence: 0.05, remedy: "There is no cure. Remove and destroy infected vines to prevent spread. Protect pruning wounds with sealants or fungicides." },
-    { disease: "Peach Bacterial Spot", crop: "Peach", confidence: 0.45, remedy: "Plant resistant varieties (e.g., Candor, Southern Pearl). Apply copper sprays at leaf drop in fall and before bud swell in spring." },
-    { disease: "Pepper Bell Bacterial Spot", crop: "Pepper", confidence: 0.40, remedy: "Use disease-free seeds and transplants. Rotate crops every 2-3 years. Apply copper-based bactericides mixed with Mancozeb." },
-    { disease: "Potato Early Blight", crop: "Potato", confidence: 0.85, remedy: "Maintain plant vigor with proper nitrogen and irrigation. Apply fungicides like Chlorothalonil, Mancozeb, or Azoxystrobin on a schedule." },
-    { disease: "Potato Late Blight", crop: "Potato", confidence: 0.35, remedy: "Destroy all infected tubers and cull piles. Apply fungicides like Metalaxyl, Cymoxanil, or Chlorothalonil preventatively. Monitor weather conditions." },
-    { disease: "Rice Brown Spot", crop: "Rice", confidence: 0.65, remedy: "Use resistant varieties. Improve soil fertility (especially Potassium and Silicon). Treat seeds with fungicides like Iprodione or Carbendazim." },
-    { disease: "Rice Leaf Blast", crop: "Rice", confidence: 0.55, remedy: "Avoid excessive nitrogen application. Maintain consistent flood depth. Apply systemic fungicides like Tricyclazole or Isoprothiolane." },
-    { disease: "Rice Bacterial Leaf Blight", crop: "Rice", confidence: 0.45, remedy: "Use resistant varieties (e.g., IR64). Avoid nitrogen fertilizer during severe outbreaks. Drain the field to reduce humidity." },
-    { disease: "Rice Tungro Virus", crop: "Rice", confidence: 0.08, remedy: "Control green leafhopper vectors using insecticides (Imidacloprid). Plant resistant varieties. Practice synchronous planting." },
-    { disease: "Tomato Bacterial Spot", crop: "Tomato", confidence: 0.42, remedy: "Remove infected plants. Avoid overhead watering to reduce splash spread. Apply copper sprays mixed with Mancozeb." },
-    { disease: "Tomato Early Blight", crop: "Tomato", confidence: 0.83, remedy: "Mulch soil to prevent spore splash. Stake plants for better airflow. Apply fungicides like Chlorothalonil or Copper-based products." },
-    { disease: "Tomato Late Blight", crop: "Tomato", confidence: 0.30, remedy: "Remove and destroy infected plant parts immediately. Apply copper-based fungicides or Chlorothalonil on a 7-10 day schedule." },
-    { disease: "Tomato Leaf Mold", crop: "Tomato", confidence: 0.78, remedy: "Increase air circulation by spacing and pruning. Reduce greenhouse humidity. Apply fungicides like Chlorothalonil or Mancozeb." },
-    { disease: "Tomato Septoria Leaf Spot", crop: "Tomato", confidence: 0.81, remedy: "Remove lower leaves to improve airflow. Mulch the base of plants. Apply fungicides like Chlorothalonil or Copper soap." },
-    { disease: "Tomato Mosaic Virus", crop: "Tomato", confidence: 0.05, remedy: "Remove and destroy infected plants. Wash hands thoroughly after using tobacco products. Control aphids which can transmit viruses." },
-    { disease: "Wheat Yellow Rust", crop: "Wheat", confidence: 0.60, remedy: "Plant resistant varieties. Apply fungicides like Tebuconazole, Propiconazole, or Azoxystrobin at the first sign of infection." },
-    { disease: "Wheat Brown Rust", crop: "Wheat", confidence: 0.65, remedy: "Use resistant cultivars. Apply foliar fungicides (Triazoles or Strobilurins) when the flag leaf is emerging." },
-    { disease: "Wheat Loose Smut", crop: "Wheat", confidence: 0.88, remedy: "Use certified disease-free seed. Treat seeds with systemic fungicides like Carboxin or Tebuconazole before planting." },
-    { disease: "Cotton Bacterial Blight", crop: "Cotton", confidence: 0.48, remedy: "Use acid-delinted seeds. Plant resistant varieties. Destroy crop residues after harvest to reduce overwintering bacteria." },
-    { disease: "Cotton Leaf Curl Virus", crop: "Cotton", confidence: 0.09, remedy: "Control whitefly vectors using insecticides (e.g., Diafenthiuron). Use resistant varieties. Remove weed hosts from the field." },
-    { disease: "Sugarcane Red Rot", crop: "Sugarcane", confidence: 0.25, remedy: "Use healthy setts for planting. Follow a crop rotation of 2-3 years. Treat setts with Carbendazim before planting." },
-    { disease: "Sugarcane Smut", crop: "Sugarcane", confidence: 0.55, remedy: "Remove and burn smut whips (whip-like structures). Use resistant varieties. Treat setts with hot water (50°C for 2 hours) before planting." },
-    { disease: "Soybean Rust", crop: "Soybean", confidence: 0.40, remedy: "Monitor sentinel plots. Apply fungicides (Triazoles/Strobilurins) preventatively or at the very first sign of disease." },
-    { disease: "Citrus Canker", crop: "Citrus", confidence: 0.70, remedy: "Prune infected twigs and branches. Spray with copper-based bactericides to protect new growth. Use windbreaks to reduce spread." },
-    { disease: "Citrus Greening (Huanglongbing)", crop: "Citrus", confidence: 0.20, remedy: "Remove and destroy infected trees immediately. Control the Asian Citrus Psyllid vector with insecticides. Use disease-free nursery stock." },
-    { disease: "Cucumber Mosaic Virus", crop: "Cucumber", confidence: 0.15, remedy: "Control aphid vectors. Remove weed hosts. Use resistant varieties. Disinfect tools to prevent mechanical transmission." },
-    { disease: "Cucurbit Powdery Mildew", crop: "Cucumber/Melon", confidence: 0.85, remedy: "Apply sulfur or potassium bicarbonate sprays. Plant resistant varieties. Improve air circulation by spacing vines." },
-    { disease: "Eggplant Fruit Rot", crop: "Eggplant", confidence: 0.60, remedy: "Remove and destroy infected fruits. Stake plants to keep fruit off the ground. Apply fungicides like Copper oxychloride or Mancozeb." },
-    { disease: "Rose Black Spot", crop: "Rose", confidence: 0.75, remedy: "Remove infected leaves and prune canes. Avoid overhead watering. Apply fungicides containing Chlorothalonil or Propiconazole." },
-    { disease: "Bean Anthracnose", crop: "Bean", confidence: 0.65, remedy: "Use disease-free seed. Rotate crops for at least 2 years. Apply fungicides like Chlorothalonil if weather is cool and wet." },
-    { disease: "Strawberry Gray Mold (Botrytis)", crop: "Strawberry", confidence: 0.80, remedy: "Remove decaying fruit and leaves. Handle fruit gently. Apply fungicides during bloom to protect flowers." },
-    { disease: "Onion Downy Mildew", crop: "Onion", confidence: 0.55, remedy: "Plant rows in the direction of prevailing winds for airflow. Apply fungicides like Mancozeb or Chlorothalonil preventatively." },
-    { disease: "Chilli Leaf Curl Virus", crop: "Chilli", confidence: 0.10, remedy: "Control whitefly vectors. Roguing of infected plants. Use virus-resistant hybrids." },
-    { disease: "Groundnut Tikka Disease", crop: "Groundnut", confidence: 0.68, remedy: "Spray Carbendazim or Mancozeb. Use resistant varieties. Clean cultivation to remove plant debris." },
-    { disease: "Pomegranate Bacterial Blight", crop: "Pomegranate", confidence: 0.50, remedy: "Prune affected parts and burn them. Spray Streptocycline + Copper Oxychloride. Maintain orchard sanitation." },
-    { disease: "Healthy Plant", crop: "Various", confidence: 0.99, remedy: "The plant appears healthy. Continue with regular irrigation, fertilization, and pest monitoring practices." },
-];
+const ML_ENGINE_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://adityameshram05.pythonanywhere.com' 
+    : 'http://localhost:8000';
 
 export async function POST(req: Request) {
     try {
@@ -56,26 +14,27 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No image file provided" }, { status: 400 });
         }
 
-        const buffer = Buffer.from(await imageFile.arrayBuffer());
+        // Prepare form data for the ML engine
+        const mlFormData = new FormData();
+        mlFormData.append('file', imageFile);
 
-        // MD5 hash of the image to deterministically pick a disease
-        const fileHash = crypto.createHash('md5').update(buffer).digest('hex');
-        const index = parseInt(fileHash.substring(0, 8), 16) % DISEASE_DATASET.length;
-        const result = DISEASE_DATASET[index];
+        const res = await fetch(`${ML_ENGINE_URL}/predict/disease`, {
+            method: 'POST',
+            body: mlFormData,
+        });
 
-        // Check for 50-80% confidence range → report as healthy
-        if (result.confidence >= 0.50 && result.confidence <= 0.80) {
-            return NextResponse.json({
-                disease: "No Disease Detected",
-                crop: result.crop,
-                confidence: result.confidence,
-                remedy: "No specific disease detected with high confidence. The plant appears to be relatively healthy or the symptoms are minor."
-            });
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error('ML Engine Error:', errorText);
+            throw new Error('ML Engine failed to process image');
         }
 
+        const result = await res.json();
         return NextResponse.json(result);
 
-    } catch (e) {
-        return NextResponse.json({ error: "Failed to process image" }, { status: 500 });
+    } catch (e: any) {
+        console.error('Disease Detection Route Error:', e);
+        return NextResponse.json({ error: e.message || "Failed to process image" }, { status: 500 });
     }
 }
+

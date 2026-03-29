@@ -135,4 +135,34 @@ npm.cmd run dev
 - **Disease Detection**: Upload plant leaf images to detect diseases.
 - **Crop Advisory**: Get recommendations based on soil parameters.
 - **Market Insights**: View real-time market prices.
+
+## Running the Mobile App (Android)
+
+The repository now includes a Flutter-based mobile application wrapper in the `mobile` directory.
+
+### Run on a Physical Device or Emulator
+1. Install [Flutter SDK](https://docs.flutter.dev/get-started/install) and Android Studio.
+2. Connect your Android device via USB (with USB Debugging enabled) or start an Android Emulator.
+3. Open a terminal and navigate to the mobile folder:
+   ```bash
+   cd mobile
+   flutter run
+   ```
+
+### Build a shareable APK
+To generate an installable `.apk` file:
+1. Navigate to the mobile folder:
+   ```bash
+   cd mobile
+   ```
+2. Run the build command:
+   ```bash
+   flutter build apk
+   ```
+3. The generated file will be located at:
+   `mobile/build/app/outputs/flutter-apk/app-release.apk`
+
+Transfer this file to any Android device to install the KrishiBandhu application.
+
 "# krishibandhu" 
+

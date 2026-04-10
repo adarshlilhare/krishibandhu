@@ -1,331 +1,162 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sprout, 
-  Leaf, 
-  Mail, 
-  Lock, 
-  User, 
-  ArrowRight, 
-  Eye, 
-  EyeOff, 
-  CheckCircle2, 
-  AlertCircle,
-  ChevronRight,
-  ShieldCheck
-} from 'lucide-react';
+import { Leaf, ShieldCheck, TrendingUp, Zap, Brain, Smartphone } from 'lucide-react';
+import Hero from '@/components/Hero';
+import FeatureCard from '@/components/FeatureCard';
+import VisualStats from '@/components/VisualStats';
+import CursorEffect from '@/components/CursorEffect';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
-type AuthMode = 'login' | 'signup';
-
-export default function AuthPage() {
-  const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    username: '',
-    email: '',
-    password: ''
-  });
-
-  const toggleMode = () => {
-    setMode(mode === 'login' ? 'signup' : 'login');
-    setFormData({ name: '', username: '', email: '', password: '' });
-    setError('');
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const getPasswordStrength = (password: string) => {
-    if (!password) return 0;
-    let strength = 0;
-    if (password.length > 8) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-    return strength;
-  };
-
-  const strength = getPasswordStrength(formData.password);
-  const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
-  const strengthColors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f5f5f0] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse" />
-      
-      <div className="max-w-6xl w-full grid md:grid-cols-2 glass-card rounded-3xl overflow-hidden relative z-10">
-        
-        {/* Left Side: Branding & Info */}
-        <div className="hidden md:flex flex-col justify-between p-12 bg-primary text-white relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path d="M0 100 C 20 0 50 0 100 100 Z" fill="currentColor" />
-            </svg>
+    <div className="min-h-screen bg-black text-white selection:bg-green-500/30">
+      <CursorEffect />
+
+      <Hero />
+
+      <VisualStats />
+
+      {/* Features Section */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-green-900/10 -skew-y-3 transform origin-top-left scale-110" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-20">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl font-bold mb-6"
+            >
+              Advanced <span className="text-green-400">Intelligence</span> for Your Farm
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-400 max-w-2xl mx-auto"
+            >
+              Our neural networks process millions of data points to provide you with accurate, actionable insights.
+            </motion.p>
           </div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
-                <Sprout className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight">KrishiBandhu</h1>
-            </div>
-            
-            <h2 className="text-4xl font-bold leading-tight mb-6">
-              Empowering Farmers with <span className="text-secondary">AI Intelligence</span>
-            </h2>
-            
-            <div className="space-y-6">
-              <FeatureItem 
-                icon={<ShieldCheck className="w-5 h-5" />} 
-                title="Disease Detection" 
-                desc="Instant identification of crop diseases using AI vision."
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Link href="/disease-detection">
+              <FeatureCard
+                icon={ShieldCheck}
+                title="Disease Detection"
+                description="Computer vision algorithms identify plant pathologies with 98.5% accuracy in milliseconds."
+                delay={0}
               />
-              <FeatureItem 
-                icon={<Leaf className="w-5 h-5" />} 
-                title="Expert Advisory" 
-                desc="Personalized farming tips based on your soil and climate."
+            </Link>
+            <Link href="/crop-advisory">
+              <FeatureCard
+                icon={Leaf}
+                title="Crop Advisory"
+                description="Soil analysis and climate modeling to recommend the perfect crops for your specific conditions."
+                delay={0.1}
               />
-              <FeatureItem 
-                icon={<ArrowRight className="w-5 h-5" />} 
-                title="Market Insights" 
-                desc="Real-time price tracking for your local Mandis."
+            </Link>
+            <Link href="/market-insights">
+              <FeatureCard
+                icon={TrendingUp}
+                title="Market Insights"
+                description="Real-time global trade pricing and localized predictive market analytics."
+                delay={0.2}
               />
-            </div>
-          </div>
-          
-          <div className="relative z-10 mt-12">
-            <p className="text-white/60 text-sm">
-              © 2026 KrishiBandhu. Growing together, harvesting success.
-            </p>
+            </Link>
+
           </div>
         </div>
+      </section>
 
-        {/* Right Side: Auth Form */}
-        <div className="p-8 md:p-12 bg-white/40 backdrop-blur-sm">
-          <div className="max-w-md mx-auto">
-            <div className="mb-10">
-              <div className="md:hidden flex items-center gap-2 mb-6 text-primary">
-                <Sprout className="w-6 h-6" />
-                <span className="font-bold text-xl">KrishiBandhu</span>
-              </div>
-              <h3 className="text-3xl font-bold text-earth mb-2">
-                {mode === 'login' ? 'Welcome Back!' : 'Join KrishiBandhu'}
-              </h3>
-              <p className="text-stone-500">
-                {mode === 'login' 
-                  ? 'Access your farm dashboard and AI insights.' 
-                  : 'Start your journey towards smarter farming today.'}
+      {/* Tech/How it Works Section */}
+      <section className="py-24 bg-gradient-to-b from-black to-green-950/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8"
+            >
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                Powered by <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">Next-Gen Technology</span>
+              </h2>
+              <p className="text-lg text-gray-400 leading-relaxed">
+                KrishiBandhu isn't just an app; it's a sophisticated agricultural operating system. We combine satellite imagery, IoT sensor data, and deep learning models to create a digital twin of your farm.
               </p>
-            </div>
 
-            <form className="space-y-5" onSubmit={(e) => {
-              e.preventDefault();
-              setError('');
-              
-              if (mode === 'login') {
-                if (!formData.username || !formData.password) {
-                  setError('Please fill in both username and password.');
-                  return;
-                }
-              } else {
-                if (!formData.name || !formData.username || !formData.email || !formData.password) {
-                  setError('Please fill in all required fields.');
-                  return;
-                }
-              }
-              
-              router.push('/dashboard');
-            }}>
-              <AnimatePresence mode="wait">
-                {mode === 'signup' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-5"
-                  >
-                    <div className="space-y-1">
-                      <label className="text-sm font-semibold text-stone-700 ml-1">Full Name</label>
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          name="name"
-                          placeholder="Enter your full name" 
-                          className="input-field"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-stone-700 ml-1">
-                  {mode === 'login' ? 'Username or Email' : 'Username'}
-                </label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    name="username"
-                    placeholder={mode === 'login' ? "Username or email address" : "Choose a unique username"} 
-                    className="input-field"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              {mode === 'signup' && (
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-1"
-                >
-                  <label className="text-sm font-semibold text-stone-700 ml-1">Email Address</label>
-                  <div className="relative">
-                    <input 
-                      type="email" 
-                      name="email"
-                      placeholder="Enter your email" 
-                      className="input-field"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                    />
+              <div className="space-y-4">
+                {[
+                  { icon: Brain, text: "Deep Learning Models" },
+                  { icon: Zap, text: "Real-time Processing" },
+                  { icon: Smartphone, text: "Offline-First Architecture" }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <item.icon className="w-6 h-6 text-green-400" />
+                    <span className="font-semibold text-white">{item.text}</span>
                   </div>
-                </motion.div>
-              )}
-
-              <div className="space-y-1">
-                <div className="flex justify-between items-center px-1">
-                  <label className="text-sm font-semibold text-stone-700">Password</label>
-                  {mode === 'login' && (
-                    <button type="button" className="text-xs text-primary font-medium hover:underline">
-                      Forgot Password?
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    name="password"
-                    placeholder="••••••••" 
-                    className="input-field pr-12"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                  />
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowPassword((prev) => !prev);
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-800 transition-colors cursor-pointer z-50"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                
-                {/* Password Security Meter */}
-                {formData.password && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-3 space-y-2"
-                  >
-                    <div className="flex gap-1 h-1.5">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div 
-                          key={i} 
-                          className={`flex-1 rounded-full transition-all duration-500 ${
-                            i <= strength ? strengthColors[strength - 1] : 'bg-stone-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-bold">
-                      <span className={strength > 0 ? 'text-stone-600' : 'text-stone-400'}>
-                        Strength: <span className={strength > 0 ? 'text-primary' : ''}>{strengthLabels[strength - 1] || 'None'}</span>
-                      </span>
-                      <div className="flex gap-2">
-                        <PasswordCriteria met={formData.password.length >= 8} label="8+ chars" />
-                        <PasswordCriteria met={/[A-Z]/.test(formData.password)} label="Upper" />
-                        <PasswordCriteria met={/[0-9]/.test(formData.password)} label="Number" />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
+                ))}
               </div>
+            </motion.div>
 
-              <div className="pt-4">
-                {error && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    className="mb-4 p-3 bg-red-100/80 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2"
-                  >
-                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                    <span>{error}</span>
-                  </motion.div>
-                )}
-                <button type="submit" className="btn-primary group">
-                  <span className="flex items-center justify-center gap-2">
-                    {mode === 'login' ? 'Sign In' : 'Create Account'}
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </button>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute inset-0 bg-green-500/20 blur-3xl rounded-full" />
+              <div className="relative glass-card p-8 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-40 rounded-2xl bg-green-500/10 animate-pulse" />
+                  <div className="h-40 rounded-2xl bg-green-500/5" />
+                  <div className="h-40 rounded-2xl bg-green-500/5" />
+                  <div className="h-40 rounded-2xl bg-green-500/10 animate-pulse delay-75" />
+                </div>
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-green-400 font-mono">PROCESSING FARM DATA...</p>
+                </div>
               </div>
-            </form>
-
-            <div className="mt-8 text-center">
-              <p className="text-stone-600 text-sm">
-                {mode === 'login' ? "Don't have an account?" : "Already have an account?"}
-                <button 
-                  onClick={toggleMode}
-                  className="ml-2 text-primary font-bold hover:underline"
-                >
-                  {mode === 'login' ? 'Sign Up' : 'Log In'}
-                </button>
-              </p>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      </section>
 
-function FeatureItem({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
-  return (
-    <div className="flex gap-4 items-start">
-      <div className="mt-1 p-2 bg-white/10 rounded-lg">
-        {icon}
-      </div>
-      <div>
-        <h4 className="font-semibold text-lg">{title}</h4>
-        <p className="text-white/70 text-sm leading-relaxed">{desc}</p>
-      </div>
-    </div>
-  );
-}
+      {/* CTA Section */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-green-600/10" />
+        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl md:text-6xl font-bold mb-8"
+          >
+            Ready to <span className="text-green-500">Transform</span> Your Harvest?
+          </motion.h2>
+          <Link href="/services">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-12 py-5 bg-green-500 text-black font-bold text-xl rounded-full shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:shadow-[0_0_50px_rgba(34,197,94,0.6)] transition-all"
+            >
+              Get Started Now
+            </motion.button>
+          </Link>
+        </div>
+      </section>
 
-function PasswordCriteria({ met, label }: { met: boolean, label: string }) {
-  return (
-    <span className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-stone-400'}`}>
-      {met ? <CheckCircle2 className="w-2.5 h-2.5" /> : <AlertCircle className="w-2.5 h-2.5" />}
-      {label}
-    </span>
+      {/* Footer */}
+      <footer className="py-12 border-t border-white/10 bg-black">
+        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500">
+          <p>© 2024 KrishiBandhu AI. Engineering the future of food.</p>
+        </div>
+      </footer>
+    </div>
   );
 }

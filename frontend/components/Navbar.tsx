@@ -12,10 +12,8 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const { isListening, startListening, stopListening, isSupported } = useSpeechRecognition();
 
-    if (pathname === '/') return null;
-
     const navItems = [
-        { name: 'Home', href: '/dashboard', icon: Sprout },
+        { name: 'Home', href: '/', icon: Sprout },
         { name: 'Disease Detection', href: '/disease-detection', icon: Leaf },
         { name: 'Crop Advisory', href: '/crop-advisory', icon: CloudSun },
         { name: 'Market Insights', href: '/market-insights', icon: BarChart3 },
@@ -34,7 +32,7 @@ export default function Navbar() {
                 } else if (lower.includes('market') || lower.includes('price') || lower.includes('insight')) {
                     window.location.href = '/market-insights';
                 } else if (lower.includes('home') || lower.includes('dashboard')) {
-                    window.location.href = '/dashboard';
+                    window.location.href = '/';
                 }
             });
         }
@@ -45,7 +43,7 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex items-center">
-                        <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-2">
+                        <Link href="/" className="flex-shrink-0 flex items-center gap-2">
                             <div className="bg-green-600 p-1.5 rounded-lg">
                                 <Leaf className="h-6 w-6 text-white" />
                             </div>

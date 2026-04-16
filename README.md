@@ -71,4 +71,7 @@ KrishiBandhu/
 ## 📄 License
 This project operates under the terms specified in the [LICENSE](./LICENSE) file.
 
-Designed and developed independently by **Adarsh Lilhare**.
+*Developed as a college academic project.*
+
+**Lead Developer & Technical Architect:** Adarsh Lilhare  
+*(Responsible for 100% of the full-stack development, ML integration, and deployment).*

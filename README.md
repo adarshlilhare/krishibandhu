@@ -71,7 +71,4 @@ KrishiBandhu/
 ## 📄 License
 This project operates under the terms specified in the [LICENSE](./LICENSE) file.
 
-## 🤝 Support & Contributions
-Contributions, issues, and feature requests are very welcome! Let's help make modern agriculture better and more accessible for everyone together.
-
-Designed and developed by the **KrishiBandhu Team**.
+Designed and developed independently by **Adarsh Lilhare**.

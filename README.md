@@ -50,7 +50,7 @@ To run the project locally, please refer to the detailed **[GUIDE.md](./GUIDE.md
 2. Starting the Backend environment.
 3. Running the ML Engine virtual environment.
 4. Booting the Next.js Frontend.
-5. Setup instructions for GitHub Codespaces.
+5. Setup instructions for GitHub Codespace.
 
 ---
 
